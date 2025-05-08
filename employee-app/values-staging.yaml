@@ -1,0 +1,9 @@
+replicaCount: 2
+frontend:
+  image:
+    repository: ghcr.io/your-org/employee-ui
+    tag: staging
+backend:
+  image:
+    repository: ghcr.io/your-org/employee-api
+    tag: staging

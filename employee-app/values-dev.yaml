@@ -1,0 +1,9 @@
+replicaCount: 1
+frontend:
+  image:
+    repository: ghcr.io/your-org/employee-ui
+    tag: dev
+backend:
+  image:
+    repository: ghcr.io/your-org/employee-api
+    tag: dev

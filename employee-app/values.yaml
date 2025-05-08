@@ -1,0 +1,16 @@
+frontend:
+  image:
+    repository: ghcr.io/myorg/employee-ui
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 80
+    type: LoadBalancer
+
+backend:
+  image:
+    repository: ghcr.io/myorg/employee-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 5000
