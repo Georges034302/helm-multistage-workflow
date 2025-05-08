@@ -2,11 +2,23 @@
 
 set -e
 
-RELEASE_NAME="employee-app"
+ENVIRONMENT=${1:-dev}  # accepts "dev", "staging", or "prod"
+RELEASE_NAME="employee-app-$ENVIRONMENT"
 CHART_DIR="./employee-app"
+NAMESPACE="$ENVIRONMENT"
+VALUES_FILE="$CHART_DIR/values-$ENVIRONMENT.yaml"
 
-echo "🚀 Deploying $RELEASE_NAME to AKS via Helm..."
-helm upgrade --install "$RELEASE_NAME" "$CHART_DIR"
+echo "📦 Deploying to environment: $ENVIRONMENT"
+echo "🛠 Release name: $RELEASE_NAME"
+echo "📁 Namespace: $NAMESPACE"
+echo "📄 Using values file: $VALUES_FILE"
 
-echo "🌐 Fetching external IP..."
-kubectl get svc employee-frontend --watch
+kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+echo "🚀 Running Helm install/upgrade..."
+helm upgrade --install "$RELEASE_NAME" "$CHART_DIR" \
+  --namespace "$NAMESPACE" \
+  --values "$VALUES_FILE"
+
+echo "🌐 Waiting for external IP..."
+kubectl get svc -n "$NAMESPACE" --watch
