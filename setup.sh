@@ -2,21 +2,27 @@
 
 set -e
 
-# Configurable variables
-RESOURCE_GROUP="employeeResourceGroup"
-CLUSTER_NAME="employeeAKSCluster"
-LOCATION="australiaeast"
+# 🔧 Usage: ./deploy.sh [dev|staging|prod]
+ENVIRONMENT=${1:-dev}  # default to 'dev' if no argument provided
 
-echo "🔐 Logging into Azure..."
-az login --use-device-code
+RELEASE_NAME="employee-app-$ENVIRONMENT"
+CHART_DIR="./employee-app"
+NAMESPACE="$ENVIRONMENT"
+VALUES_FILE="$CHART_DIR/values-$ENVIRONMENT.yaml"
 
-echo "📁 Creating resource group: $RESOURCE_GROUP"
-az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
+echo "📦 Deploying to environment: $ENVIRONMENT"
+echo "🛠  Release name: $RELEASE_NAME"
+echo "📁 Namespace: $NAMESPACE"
+echo "📄 Using values file: $VALUES_FILE"
 
-echo "🔧 Creating AKS cluster: $CLUSTER_NAME"
-az aks create   --resource-group "$RESOURCE_GROUP"   --name "$CLUSTER_NAME"   --node-count 1   --no-ssh-key
+# ✅ Ensure namespace exists (idempotent)
+kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-echo "🔗 Getting AKS credentials"
-az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$CLUSTER_NAME"
+# 🚀 Deploy with Helm
+helm upgrade --install "$RELEASE_NAME" "$CHART_DIR" \
+  --namespace "$NAMESPACE" \
+  --values "$VALUES_FILE"
 
-echo "✅ AKS setup complete. You can now deploy the app using ./deploy.sh"
+# 🌐 Wait for service IP
+echo "🌐 Waiting for external IP..."
+kubectl get svc -n "$NAMESPACE" --watch
