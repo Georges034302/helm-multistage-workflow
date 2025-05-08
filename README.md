@@ -11,6 +11,9 @@ employee-app-helm/
 ├── employee-app/
 │   ├── Chart.yaml
 │   ├── values.yaml
+│   ├── values-dev.yaml
+│   ├── values-staging.yaml
+│   ├── values-prod.yaml
 │   └── templates/
 │       ├── backend-deployment.yaml
 │       ├── backend-service.yaml
@@ -25,10 +28,13 @@ employee-app-helm/
 │   ├── Dockerfile
 │   ├── package.json
 │   └── server.js
-│
-├── deploy.sh
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
 ├── setup.sh
-└── README
+├── deploy.sh
+├── secure-secrets.sh
+└── README.md
 ```
 
 ---
@@ -67,7 +73,7 @@ employee-app-helm/
 ### 🚀 Deployment Steps
 
 1. **Build and Push Images**
-   > Replace image repos in `values.yaml` with your container registry (e.g., ACR, DockerHub)
+   Replace image repos in values files with your container registry:
 
    ```bash
    docker build -t ghcr.io/myorg/employee-api ./backend
@@ -77,29 +83,31 @@ employee-app-helm/
    docker push ghcr.io/myorg/employee-ui
    ```
 
-2. **Update `values.yaml`**
-   ```yaml
-   frontend.image.repository: ghcr.io/myorg/employee-ui
-   backend.image.repository: ghcr.io/myorg/employee-api
-   ```
-
-3. **Connect to AKS**
+2. **Run Setup Script (Creates AKS and Configures kubectl)**
    ```bash
-   az login
-   az aks get-credentials --resource-group <resource-group> --name <cluster-name>
+   ./setup.sh
    ```
 
-4. **Deploy via Helm**
+3. **Deploy to an Environment**
+   You can deploy to one of the three environments: `dev`, `staging`, or `prod`.
+
    ```bash
-   helm install employee-app ./employee-app
+   ./deploy.sh dev
+   ./deploy.sh staging
+   ./deploy.sh prod
    ```
 
-5. **Get the External IP**
+   This script:
+   - Uses `values-<env>.yaml`
+   - Automatically creates the namespace
+   - Deploys using a Helm release named `employee-app-<env>`
+
+4. **Get the External IP**
    ```bash
-   kubectl get svc employee-frontend
+   kubectl get svc -n <env>
    ```
 
-6. **Open the App**
+5. **Open the App**
    ```
    http://<EXTERNAL-IP>
    ```
@@ -120,8 +128,12 @@ employee-app-helm/
 
 ### 🧹 Cleanup
 
+To uninstall from a specific environment:
+
 ```bash
-helm uninstall employee-app
+helm uninstall employee-app-dev -n dev
+helm uninstall employee-app-staging -n staging
+helm uninstall employee-app-prod -n prod
 ```
 
 ---
